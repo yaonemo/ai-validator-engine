@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "名称": "车位信息收集校验",
+    "版本": "1.0",
+    "适用业务": "车位信息收集",
+    "规则来源": "车位管理信息收集培训手册 + 校验经验积累（2026-07-28最新修正）",
+    "规则说明": "本配置由校验官引擎读取执行。任何部门替换本文件的业务规则即可生成自己的校验体系。"
+  },
+  "structure": {
+    "标准表头": [
+      "行号", "所属事业部", "车场名称", "车位类型", "车位状态", "车位空间",
+      "车位位置（地面、地下、地上、地面车库）", "层数", "车位编号",
+      "车位面积（单位：㎡）", "是否安装充电桩", "产权类型", "产权人姓名/公司",
+      "产权人联系方式", "车位使用人姓名", "车位使用人电话", "收费规则名称",
+      "收费规则类型", "收费单价", "备注"
+    ],
+    "表头别名": {"行号": ["序号"]},
+    "数据起始行": 3,
+    "示例行过滤": {
+      "字段": "row_num",
+      "包含关键词": ["示例", "字段说明"]
+    },
+    "字段映射": {
+      "row_num": "行号", "division": "所属事业部", "parking_name": "车场名称",
+      "spot_type": "车位类型", "spot_status": "车位状态", "spot_space": "车位空间",
+      "spot_position": "车位位置", "layer": "层数", "spot_number": "车位编号",
+      "spot_area": "车位面积", "charging": "是否安装充电桩", "property_type": "产权类型",
+      "property_owner": "产权人", "owner_contact": "产权人联系方式",
+      "user": "使用人", "user_phone": "使用人电话", "charging_rule": "收费规则名称",
+      "rule_type": "收费规则类型", "unit_price": "收费单价", "remark": "备注"
+    }
+  },
+  "项目名提取": {
+    "字段": "parking_name",
+    "策略": "most_frequent",
+    "兜底": "文件名"
+  },
+  "组织关键词": ["公司", "集团", "企业", "单位", "委员会", "政府", "局", "处", "中心", "院", "学校", "医院", "银行", "基金", "协会", "商会", "开发", "地产", "置业", "投资", "建设", "物业", "管理"],
+  "字段校验": [
+    {"id": "F01", "type": "required", "field": "row_num", "severity": "error", "message": "行号列为空，必须填写连续编号"},
+    {"id": "F02", "type": "required", "field": "division", "severity": "warning", "message": "所属事业部为空"},
+    {"id": "F03", "type": "required", "field": "parking_name", "severity": "warning", "message": "车场名称为空"},
+    {"id": "F04", "type": "in_list", "field": "spot_type", "list": ["普通车位", "机械车位", "子母车位", "微型车位", "残疾人专用车位", "应急/特殊车位", "预留车位", "货车/大型车辆车位", "人防车位"], "severity": "error", "message": "无效的车位类型，当前值: {value}，有效值: 普通车位/机械车位/子母车位/微型车位/残疾人专用车位/应急-特殊车位/预留车位/货车-大型车辆车位/人防车位"},
+    {"id": "F05", "type": "in_list", "field": "spot_status", "list": ["租赁", "已出售", "空置", "开发商自有"], "severity": "error", "message": "无效的车位状态，当前值: {value}，有效值: 租赁/已出售/空置/开发商自有"},
+    {"id": "F06", "type": "in_list", "field": "spot_space", "list": ["地面-商铺外围", "地面-小区内部", "别墅地面", "机械车库", "地库", "别墅地库"], "severity": "error", "message": "车位空间不在预定义列表中，当前值: {value}"},
+    {"id": "F07", "type": "in_list", "field": "spot_position", "list": ["地面", "地下", "地上", "地面车库"], "severity": "error", "message": "车位位置不在预定义列表中，当前值: {value}"},
+    {"id": "F09", "type": "not_contains_chinese", "field": "spot_number", "severity": "error", "message": "车位编号不允许包含中文字符，当前值: {value}"},
+    {"id": "F10a", "type": "required", "field": "spot_area", "severity": "error", "message": "车位面积为空，必须填写"},
+    {"id": "F10b", "type": "numeric", "field": "spot_area", "allow_values": ["无"], "severity": "error", "message": "车位面积必须是纯数字，当前值: {value}"},
+    {"id": "F11", "type": "in_list", "field": "charging", "list": ["是", "否"], "severity": "error", "message": "充电桩字段只能填'是'或'否'，当前值: {value}"},
+    {"id": "F12", "type": "in_list", "field": "property_type", "list": ["业主产权车位", "开发商保留", "全体共有", "其他", "开发商长租给业主（长租合同，无法办理产证）"], "severity": "error", "message": "无效的产权类型，当前值: {value}，有效值: 业主产权车位/开发商保留/全体共有/其他/开发商长租给业主"},
+    {"id": "F13", "type": "required", "field": "owner_contact", "severity": "error", "message": "产权人联系方式为空，必须填写", "unless": {"field": "property_owner", "op": "eq", "value": "全体业主"}},
+    {"id": "F14", "type": "required", "field": "user_phone", "severity": "error", "message": "使用人电话为空，必须填写", "unless": {"field": "user", "op": "in", "value": ["无", ""]}},
+    {"id": "F15a", "type": "required", "field": "spot_type", "severity": "error", "message": "车位类型为空"},
+    {"id": "F15b", "type": "required", "field": "spot_status", "severity": "error", "message": "车位状态为空"},
+    {"id": "F15c", "type": "required", "field": "property_type", "severity": "error", "message": "产权类型为空"},
+    {"id": "F17", "type": "required", "field": "charging_rule", "severity": "warning", "message": "收费规则名称为空"},
+    {"id": "F17a", "type": "if_then", "if": {"field": "charging_rule", "op": "in", "value": ["临停", "\\"]}, "then": {"field": "rule_type", "op": "eq", "value": "\\"}, "severity": "warning", "message": "收费规则名称为'{charging_rule}'时，收费规则类型应填写'\\'，当前值: {rule_type}"},
+    {"id": "F17b", "type": "if_then", "if": {"field": "charging_rule", "op": "in", "value": ["临停", "\\"]}, "then": {"field": "unit_price", "op": "eq", "value": "\\"}, "severity": "warning", "message": "收费规则名称为'{charging_rule}'时，收费单价应填写'\\'，当前值: {unit_price}"},
+    {"id": "F18", "type": "in_list", "field": "rule_type", "list": ["固定单价", "按面积收费", "\\"], "severity": "error", "message": "收费规则类型不在预定义列表中，当前值: {value}"},
+    {"id": "F19", "type": "required", "field": "unit_price", "severity": "error", "message": "收费单价为空，必须填写（无收费时填\"\\\"）"},
+    {"id": "F19a", "type": "numeric", "field": "unit_price", "allow_values": ["\\", "/"], "severity": "error", "message": "收费单价只能填金额数字，不能包含单位。当前值: {value}"}
+  ],
+  "逻辑校验": [
+    {"id": "L02", "type": "if_then", "if": {"field": "spot_status", "op": "eq", "value": "已出售"}, "then": {"field": "property_type", "op": "neq", "value": "开发商保留"}, "severity": "error", "message": "车位状态为'已出售'但产权类型为'开发商保留'，逻辑矛盾"},
+    {"id": "L03", "type": "if_then", "if": {"field": "spot_status", "op": "eq", "value": "开发商自有"}, "then": {"field": "property_type", "op": "eq", "value": "开发商保留"}, "severity": "warning", "message": "车位状态为'开发商自有'但产权类型不是'开发商保留'"},
+    {"id": "L04", "type": "if_then", "if": {"field": "spot_status", "op": "eq", "value": "空置"}, "then": {"field": "user", "op": "eq", "value": "无"}, "severity": "warning", "message": "车位状态为'空置'但使用人不是'无'"},
+    {"id": "L05", "type": "if_then", "if": {"field": "user", "op": "eq", "value": "无"}, "then": {"field": "user_phone", "op": "eq", "value": "无"}, "severity": "warning", "message": "使用人为'无'但使用人电话不是'无'"},
+    {"id": "L07", "type": "personal_name_warn", "field": "property_owner", "severity": "warning", "message": "产权类型为'开发商保留'但产权人'{value}'疑似个人姓名，应为开发商公司全称", "when": {"field": "property_type", "op": "eq", "value": "开发商保留"}},
+    {"id": "L07.1", "type": "if_then", "if": {"field": "property_type", "op": "eq", "value": "开发商保留"}, "then": {"field": "property_owner", "op": "neq", "value": "无"}, "severity": "error", "message": "产权类型为'开发商保留'但产权人为'无'，必须填写开发商公司全称"},
+    {"id": "L08", "type": "if_then", "if": {"field": "property_type", "op": "eq", "value": "全体共有"}, "then": {"field": "property_owner", "op": "eq", "value": "全体业主"}, "severity": "error", "message": "产权类型为'全体共有'但产权人不是'全体业主'，当前值: {property_owner}"},
+    {"id": "L09", "type": "not_contains_any", "field": "property_owner", "keywords": ["公司", "开发"], "severity": "warning", "message": "产权类型为'开发商长租给业主'但产权人'{value}'疑似开发商名称，应为业主姓名", "when": {"field": "property_type", "op": "contains", "value": "开发商长租给业主"}},
+    {"id": "L10", "type": "if_then", "if": {"field": "property_type", "op": "contains", "value": "开发商长租给业主"}, "then": {"field": "spot_status", "op": "eq", "value": "已出售"}, "severity": "warning", "message": "产权类型为'开发商长租给业主'但车位状态不是'已出售'，当前状态: {spot_status}"},
+    {"id": "L11", "type": "keyword_not", "remark_field": "remark", "keyword": "物业承包", "target_field": "property_owner", "forbid_keywords": ["物业公司"], "severity": "error", "message": "备注标注'物业承包'但产权人'{property_owner}'疑似物业公司，应为开发商"},
+    {"id": "L16", "type": "keyword_if", "remark_field": "remark", "keyword": "业主相互租赁", "if": {"field": "spot_status", "op": "neq", "value": "已出售"}, "severity": "error", "message": "备注标注'业主相互租赁'但车位状态不是'已出售'，当前状态: {spot_status}"},
+    {"id": "L17", "type": "if_then", "if": {"field": "spot_status", "op": "eq", "value": "空置"}, "then": {"field": "charging_rule", "op": "eq", "value": "\\"}, "severity": "warning", "message": "车位状态为'空置'但收费规则名称不是'\\'，当前值: {charging_rule}"},
+    {"id": "L18", "type": "if_then", "if": {"field": "rule_type", "op": "eq", "value": "按面积收费"}, "then": {"field": "spot_area", "op": "not_blank"}, "severity": "error", "message": "收费规则类型为'按面积收费'但车位面积为空"},
+    {"id": "L19", "type": "keyword_if", "remark_field": "remark", "keyword": "业主相互租赁", "if": {"field": "charging_rule", "op": "neq", "value": "车位管理费"}, "severity": "warning", "message": "备注标注'业主相互租赁'但收费规则名称不是'车位管理费'，当前值: {charging_rule}"},
+    {"id": "L20", "type": "keyword_and", "remark_field": "remark", "keyword": "业主相互租赁", "if": {"field": "spot_status", "op": "eq", "value": "开发商自有"}, "severity": "error", "message": "车位状态为'开发商自有'但备注标注'业主相互租赁'，逻辑矛盾"},
+    {"id": "L21", "type": "org_name_check", "field": "property_owner", "severity": "error", "message": "车位状态为'开发商自有'但产权人'{value}'疑似个人姓名，应为开发商公司名称", "when": {"field": "spot_status", "op": "eq", "value": "开发商自有"}}
+  ],
+  "场景校验": [
+    {"id": "S01a", "type": "keyword_if", "remark_field": "remark", "keyword": "物业承包", "if": {"field": "spot_status", "op": "neq", "value": "租赁"}, "severity": "error", "message": "物业承包车位场景：车位状态应为'租赁'，当前值: {spot_status}"},
+    {"id": "S01b", "type": "keyword_if", "remark_field": "remark", "keyword": "物业承包", "if": {"field": "property_type", "op": "neq", "value": "开发商保留"}, "severity": "error", "message": "物业承包车位场景：产权类型应为'开发商保留'，当前值: {property_type}"},
+    {"id": "S03a", "type": "keyword_if", "remark_field": "remark", "keyword": "业主相互租赁", "if": {"field": "spot_status", "op": "neq", "value": "已出售"}, "severity": "error", "message": "业主相互租赁场景：车位状态应为'已出售'，当前值: {spot_status}"},
+    {"id": "S03b", "type": "keyword_if", "remark_field": "remark", "keyword": "业主相互租赁", "if": {"field": "property_type", "op": "not_in", "value": ["业主产权车位", "开发商长租给业主（长租合同，无法办理产证）"]}, "severity": "error", "message": "业主相互租赁场景：产权类型应为'业主产权车位'或'开发商长租给业主'，当前值: {property_type}"},
+    {"id": "S03c", "type": "keyword_if", "remark_field": "remark", "keyword": "业主相互租赁", "if": {"field": "charging_rule", "op": "neq", "value": "车位管理费"}, "severity": "warning", "message": "业主相互租赁场景：收费规则名称应为'车位管理费'，当前值: {charging_rule}"},
+    {"id": "S06a", "type": "if_then", "if": {"field": "spot_status", "op": "eq", "value": "空置"}, "then": {"field": "user", "op": "eq", "value": "无"}, "severity": "error", "message": "空置车位场景：使用人应为'无'，当前值: {user}"},
+    {"id": "S06b", "type": "if_then", "if": {"field": "spot_status", "op": "eq", "value": "空置"}, "then": {"field": "user_phone", "op": "eq", "value": "无"}, "severity": "error", "message": "空置车位场景：使用人电话应为'无'，当前值: {user_phone}"}
+  ]
+}
